@@ -1,0 +1,75 @@
+// multipiler goroutine search file name in a directory
+
+package main
+
+import (
+	"fmt"
+	"os"
+	"time"
+)
+
+var query string
+var matches int
+var workerCount int
+var maxWorkerCount = 32
+var searchRequest = make(chan string)
+var workerDone = make(chan bool)
+var foundMatch = make(chan bool)
+
+func waitForWorkers() {
+	for {
+		select {
+		case path := <-searchRequest:
+			workerCount++
+			go search(path, true)
+		case <-workerDone:
+			workerCount--
+			if workerCount == 0 {
+				return
+			}
+		case <-foundMatch:
+			matches++
+		}
+	}
+}
+
+/*
+param path string: 文件路径
+param master bool: 标记是否为衍生出来的子进程
+*/
+func search(path string, master bool) {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		panic(err)
+	}
+	for _, file := range files {
+		name := file.Name()
+		if name == query {
+			foundMatch <- true
+		}
+		if file.IsDir() {
+			if workerCount < maxWorkerCount {
+				// path是以/结尾的
+				searchRequest <- path + name + "/"
+			} else {
+				search(path+name+"/", false)
+			}
+		}
+		if master {
+			workerDone <- true
+		}
+	}
+}
+
+func main() {
+	start := time.Now()
+	workerCount = 1
+	query = "test"
+	// 如果这里不是goroutine, 下面的waitForWorkers()就不会被执行
+	// 然后search里的channel就会被传入，但waitForWorkers()没有执行，
+	// 所以search里的channel就一直阻塞了
+	go search("/home/wargon/", true)
+	waitForWorkers()
+	fmt.Println(matches)
+	fmt.Println(time.Since(start))
+}

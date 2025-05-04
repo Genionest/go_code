@@ -1,0 +1,10 @@
+线程 属于 进程
+
+sync.Mutex
+
+sync.RWMutex
+RLock
+RUnlock
+Lock    // 写锁定
+Unlock    // 写解锁
+

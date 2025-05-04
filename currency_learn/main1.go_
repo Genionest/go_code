@@ -1,0 +1,60 @@
+// channel
+
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func count(n int, animal string, c chan string) {
+	for i := 0; i < n; i++ {
+		c <- animal
+		time.Sleep(time.Millisecond * 100)
+	}
+	close(c) // 关闭通道, range channel时, 如果通道已经关闭, 则range结束
+}
+
+func main() {
+	c1 := make(chan string)
+	c2 := make(chan string)
+
+	go func() {
+		for i := 0; i < 5; i++ {
+			c1 <- "dog"
+			time.Sleep(time.Millisecond * 200)
+		}
+	}()
+	go func() {
+		for i := 0; i < 5; i++ {
+			c2 <- "cat"
+			time.Sleep(time.Millisecond * 500)
+		}
+	}()
+
+	// channel 的接收和发送都会阻塞线程，
+	// 所以下面的c1，c2会依次执行，c1必须等c2执行后才能执行。
+	/* for {
+		fmt.Println(<-c1)
+		fmt.Println(<-c2)
+	} */
+
+	// 使用select就没有这个问题，谁被接收到了就执行
+	for {
+		select {
+		case msg := <-c1:
+			fmt.Println(msg)
+		case msg := <-c2:
+			fmt.Println(msg)
+		}
+	}
+}
+
+// func main() {
+// 	c := make(chan string)
+
+// 	go count(5, "dog", c)
+// 	for message := range c {
+// 		fmt.Println(message)
+// 	}
+// }

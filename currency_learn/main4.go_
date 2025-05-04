@@ -1,0 +1,46 @@
+//
+
+package main
+
+var cnt int
+var cntAdd1 = make(chan bool)
+var cntAdd2 = make(chan bool)
+var cntAdd3 = make(chan bool)
+var cntAdd4 = make(chan bool)
+
+func wait() {
+	for {
+		select {
+		case <-cntAdd1:
+			cnt++
+		case <-cntAdd2:
+			cnt++
+		case <-cntAdd3:
+			cnt++
+		case <-cntAdd4:
+			cnt++
+		}
+		if cnt == 100 {
+			close(cntAdd1)
+		}
+		if cnt == 200 {
+			close(cntAdd2)
+		}
+		if cnt == 30 {
+			close(cntAdd3)
+		}
+		if cnt == 400 {
+			close(cntAdd4)
+		}
+	}
+}
+
+func count1() {
+	for {
+		cntAdd1 <- true
+	}
+}
+
+func main() {
+	wait()
+}

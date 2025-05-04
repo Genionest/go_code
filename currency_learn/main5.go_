@@ -1,0 +1,60 @@
+// RWMutex
+
+package main
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+type Config struct {
+	data map[string]string
+	rw   sync.RWMutex
+}
+
+func NewConfig() *Config {
+	return &Config{
+		data: make(map[string]string),
+	}
+}
+
+// read operation
+func (c *Config) Get(key string) string {
+	c.rw.RLock()
+	defer c.rw.RUnlock()
+	return c.data[key]
+}
+
+// write operation
+func (c *Config) Set(key, value string) {
+	c.rw.Lock()
+	defer c.rw.Unlock()
+	c.data[key] = value
+}
+
+func main() {
+	config := NewConfig()
+	// simulate currencily read
+	for i := 0; i < 5; i++ {
+		go func() {
+			// 读出的数据保持一致，那就说明没问题
+			for {
+				version := config.Get("version")
+				fmt.Println(i, version)
+				time.Sleep(100 * time.Millisecond)
+			}
+		}()
+	}
+
+	// simulate write sometime
+	go func() {
+		for {
+			config.Set("version", fmt.Sprintf("%d", time.Now().Unix()))
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	// block main goroutine
+	select {}
+}

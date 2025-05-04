@@ -1,0 +1,38 @@
+// goroutine
+
+package main
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+func count(n int, animal string) {
+	for i := 0; i < n; i++ {
+		fmt.Println(animal)
+		time.Sleep(time.Millisecond * 500)
+	}
+}
+
+func main() {
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		count(5, "dog")
+		wg.Done()
+	}()
+	go func() {
+		count(3, "cat")
+		wg.Done()
+	}()
+
+	// wg.Add(2),增加1次计数,wg.Done(),减少1次计数,当计数为0时,Wait()结束等待
+	wg.Wait()
+}
+
+// func main() {
+// 	go count(5, "dog")
+// 	go count(3, "cat")
+// 	time.Sleep(time.Second * 3)
+// }
